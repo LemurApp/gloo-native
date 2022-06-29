@@ -28,7 +28,7 @@ namespace Gloo::Internal::MicDetector::Darwin {
 
         void forEach( std::function<void(T)> cb) {
             const T* content = cast_data();
-            for (int i = 0; i < count_; ++i) {
+            for (uint32_t i = 0; i < count_; ++i) {
                 cb(content[i]);
             }
         }

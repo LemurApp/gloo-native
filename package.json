@@ -1,25 +1,40 @@
 {
-    "name": "@gloo/core",
-    "version": "1.0.0",
+    "name": "@LemurApp/core-native",
+    "version": "1.1.3",
     "description": "CPP libraries for gloo",
-    "private": true,
-    "main": "src/index.ts",
+    "repository": {
+        "url": "git://github.com/LemurApp/gloo-native.git"
+    },
+    "main": "./core-native.js",
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "prebuild-install": "^6.0.0",
         "bindings": "^1.5.0",
         "events": "^3.3.0",
         "node-addon-api": "^3.0.2"
+    },  
+    "binary": {
+        "napi_versions": [
+          3
+        ]
+      },
+      "engines": {
+        "node": ">=10"
     },
+    "gypfile": true,
     "scripts": {
-        "install": "cmake-js compile --directory ./src/cpp --out ./build",
-        "test": "ts-node ./src/ts/index.ts"
+        "install": "prebuild-install --runtime napi || node-gyp rebuild",
+        "prebuild": "prebuild --runtime napi --all --verbose --include-regex \"HID.*node$\"",
+        "prebuild-upload": "prebuild --runtime napi --upload-all",
+        "prebuild-ci": "prebuild-ci",
+        "test": "node ./src/test-listener.js"
     },
     "devDependencies": {
-        "@types/events": "^3.0.0",
-        "cmake-js": "^6.3.2",
-        "llnode": "^3.2.0",
-        "ts-node": "^9.0.0",
-        "typescript": "^4.0.3"
+        "prebuild": "^10.0.1",
+        "@types/events": "^3.0.0"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
     }
 }
