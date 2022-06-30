@@ -1,6 +1,6 @@
 {
-    "name": "@LemurApp/core-native",
-    "version": "1.2.1",
+    "name": "@lemurapp/core-native",
+    "version": "2.0.0",
     "description": "CPP libraries for gloo",
     "repository": {
         "url": "git://github.com/LemurApp/gloo-native.git"

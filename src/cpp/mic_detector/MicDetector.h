@@ -6,6 +6,7 @@
 #include <memory>
 #include <condition_variable>
 #include <iostream>
+#include "DeviceInterface.h"
 #include "../napi-thread-safe-callback.h"
 
 namespace Gloo::Internal::MicDetector
@@ -43,23 +44,20 @@ namespace Gloo::Internal::MicDetector
 
 
     private:
-        MicrophoneDetector() : thread_active_(false) {}
-        ~MicrophoneDetector() {
-            pause();
+        MicrophoneDetector() {
+            mgr_ = MakeDeviceManager([&](bool state) {
+                this->stateChanged(state);
+            });
         }
-        std::unordered_map<int, MicStatusCallback> callbacks_;
-        bool thread_active_;
-
-        // Used to fire callbacks.
-        void stateChanged(MicrophoneState state) const;
-        
-        // Function run by thread.
-        void Run();
-
-        std::thread thread_;
-        std::condition_variable cv;
 
         // Objects for thread safety.
         mutable std::mutex m_; // Used for safely accessing all members: callbacks_, thread_active_
+        std::unordered_map<int, MicStatusCallback> callbacks_;
+
+        // Used to fire callbacks.
+        void stateChanged(bool state) const;
+        
+
+        std::shared_ptr<DeviceManager> mgr_;
     };
 }
