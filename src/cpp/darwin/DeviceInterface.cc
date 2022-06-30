@@ -4,10 +4,16 @@
 #include "DeviceApi.h"
 #include <unordered_map>
 
+#ifdef __MAC_OS_X_VERSION_MAX_ALLOWED
+#if __MAC_OS_X_VERSION_MAX_ALLOWED < 120000
+const AudioObjectPropertyScope kAudioObjectPropertyElementMain = kAudioObjectPropertyElementMaster;
+#endif
+#endif
+
 namespace Gloo::Internal::MicDetector
 {
-  using Darwin::SafeAudioObjectGetPropertyValue;
   using Darwin::DataBuffer;
+  using Darwin::SafeAudioObjectGetPropertyValue;
 
   std::string OSX_FromCfString(CFStringRef input)
   {
@@ -20,12 +26,13 @@ namespace Gloo::Internal::MicDetector
             kCFStringEncodingASCII);
     std::string buffer(string_max_length + 1, '\0');
     if (!CFStringGetCString(input,
-                             buffer.data(),
-                             string_max_length + 1,
-                             kCFStringEncodingASCII)) {
-                              throw std::invalid_argument("Unable to convert string");
-                             }
-                            return buffer;
+                            buffer.data(),
+                            string_max_length + 1,
+                            kCFStringEncodingASCII))
+    {
+      throw std::invalid_argument("Unable to convert string");
+    }
+    return buffer;
   }
 
   DataBuffer<AudioObjectID> OSX_GetAudioDeviceHandles()
@@ -80,7 +87,6 @@ namespace Gloo::Internal::MicDetector
     return ret != 0;
   }
 
-
   std::vector<InputDevice> GetInputDevices()
   {
     std::vector<InputDevice> result;
@@ -100,7 +106,7 @@ namespace Gloo::Internal::MicDetector
     std::vector<DeviceStates> states;
     for (const auto &d : devices)
     {
-      states.emplace_back(DeviceStates{ OSX_IsDeviceInUseByOthers(d.deviceId) });
+      states.emplace_back(DeviceStates{OSX_IsDeviceInUseByOthers(d.deviceId)});
     }
     return states;
   }
