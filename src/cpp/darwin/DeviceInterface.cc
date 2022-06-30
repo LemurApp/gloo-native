@@ -3,6 +3,7 @@
 #include "../mic_detector/DeviceInterface.h"
 #include "DeviceApi.h"
 #include <unordered_map>
+#include <iostream>
 
 namespace Gloo::Internal::MicDetector
 {
@@ -70,6 +71,16 @@ namespace Gloo::Internal::MicDetector
     return cache_.at(deviceId);
   }
 
+  bool OSX_IsDeviceInUseBySelf(AudioObjectID deviceId)
+  {
+    AudioObjectPropertyAddress props = {
+        kAudioDevicePropertyDeviceIsRunning,
+        kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMain};
+    const auto ret = *(SafeAudioObjectGetPropertyValue<uint32_t>(deviceId, props).cast_data());
+    return ret != 0;
+  }
+
   bool OSX_IsDeviceInUseByOthers(AudioObjectID deviceId)
   {
     AudioObjectPropertyAddress props = {
@@ -100,7 +111,10 @@ namespace Gloo::Internal::MicDetector
     std::vector<DeviceStates> states;
     for (const auto &d : devices)
     {
-      states.emplace_back(DeviceStates{ OSX_IsDeviceInUseByOthers(d.deviceId) });
+      const auto others = OSX_IsDeviceInUseByOthers(d.deviceId);
+      const auto self = OSX_IsDeviceInUseBySelf(d.deviceId);
+      std::cout << "\tDEVICE: " << d.name << " " << self << " " << others << std::endl;
+      states.emplace_back(DeviceStates{ self ? false : others });
     }
     return states;
   }
