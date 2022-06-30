@@ -8,6 +8,12 @@
 #include <atomic>
 #include <memory>
 
+#ifdef __MAC_OS_X_VERSION_MAX_ALLOWED
+#if __MAC_OS_X_VERSION_MAX_ALLOWED < 120000
+const AudioObjectPropertyScope kAudioObjectPropertyElementMain = kAudioObjectPropertyElementMaster;
+#endif
+#endif
+
 namespace Gloo::Internal::MicDetector
 {
   using Darwin::DataBuffer;
