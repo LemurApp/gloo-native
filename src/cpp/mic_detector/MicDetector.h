@@ -5,7 +5,6 @@
 #include <thread>
 #include <memory>
 #include <condition_variable>
-#include <iostream>
 #include "DeviceInterface.h"
 #include "../napi-thread-safe-callback.h"
 

@@ -1,5 +1,5 @@
 let Mic = require('node-microphone');
-const MicMonitor = require('../core-native')
+const MicMonitor = require('../gloo-native')
 
 const callback = (status) => {
     console.log('Mic Status: ', status)

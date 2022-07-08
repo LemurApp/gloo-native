@@ -1,6 +1,5 @@
 #include <napi.h>
 #include "mic_detector/MicDetector.h"
-#include <iostream>
 #include "napi-thread-safe-callback.h"
 
 using Gloo::Internal::MicDetector::MicrophoneDetector;

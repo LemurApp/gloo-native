@@ -1,7 +1,6 @@
 #include "MicDetector.h"
 #include "DeviceInterface.h"
 #include <thread>
-#include <iostream>
 #include <chrono>
 using namespace std::chrono_literals;
 

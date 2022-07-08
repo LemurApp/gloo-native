@@ -4,8 +4,8 @@
 #include "DeviceApi.h"
 #include <unordered_map>
 #include <unordered_set>
-#include <iostream>
 #include <atomic>
+#include <mutex>
 #include <memory>
 
 #ifdef __MAC_OS_X_VERSION_MAX_ALLOWED
