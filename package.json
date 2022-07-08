@@ -1,11 +1,12 @@
 {
     "name": "@lemurapp/gloo-native",
-    "version": "3.0.1",
+    "version": "3.0.2",
     "description": "CPP libraries for gloo",
     "repository": {
         "url": "git://github.com/LemurApp/gloo-native.git"
     },
     "main": "./gloo-native.js",
+    "types": "./gloo-native.d.ts",
     "author": "",
     "license": "ISC",
     "dependencies": {
