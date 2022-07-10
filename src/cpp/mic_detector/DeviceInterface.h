@@ -2,6 +2,8 @@
 
 #include <string>
 #include <atomic>
+#include <functional>
+
 namespace Gloo::Internal::MicDetector
 {
 
@@ -21,8 +23,8 @@ namespace Gloo::Internal::MicDetector
             if (prev) return;
 
             micIsActive_.store(0);
-            RefreshDeviceState();
             startImpl();
+            RefreshDeviceState();
         }
         void stop()
         {
@@ -47,6 +49,10 @@ namespace Gloo::Internal::MicDetector
             }
         }
 
+        bool IsTracking() const {
+            return running_.load();
+        }
+        
         virtual bool IsActive() = 0;
         virtual void startImpl() = 0;
         virtual void stopImpl() = 0;

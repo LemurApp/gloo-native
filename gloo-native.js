@@ -5,7 +5,7 @@ var binding = null;
 
 function loadBinding() {
   if( !binding ) {
-      if( os.platform() === 'darwin' ) {
+      if( ['darwin', 'win32'].includes(os.platform()) ) {
           // Linux defaults to hidraw
           binding = require('bindings')('mic_detector.node');
       }
