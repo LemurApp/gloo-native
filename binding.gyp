@@ -22,6 +22,22 @@
             },
             "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/darwin/DeviceInterface.cc'],
         }], # OS==mac
+        [ 'OS=="win"', {
+            "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/win/DeviceInterface.cc', 'src/cpp/win/MicrophoneDevice.cc'],
+            'defines': [
+              'NAPI_CPP_EXCEPTIONS',
+              '_HAS_EXCEPTIONS=1'
+            ],
+            'msvs_settings': {
+              'VCCLCompilerTool': {
+                'AdditionalOptions': [ '-std:c++17', ],
+                'FavorSizeOrSpeed': 2,  # Favor size over speed
+                'Optimization': 1,  # Optimize for size
+                'RuntimeLibrary': 2,  # Multi-threaded runtime dll,
+                'ExceptionHandling': 1,  # Yes please
+              },
+            },
+        }]
       ],
       'cflags!': ['-ansi', '-fno-exceptions' ],
       'cflags_cc!': [ '-fno-exceptions', "-std=c++17" ],
@@ -30,7 +46,6 @@
       "include_dirs": [
         "<!@(node -p \"require('node-addon-api').include\")"
       ],
-      # 'defines': [ 'NAPI_CPP_EXCEPTIONS',  "NAPI_VERSION=<(napi_build_version)" ]
     }
   ]
 }
