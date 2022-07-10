@@ -23,8 +23,8 @@ namespace Gloo::Internal::MicDetector
             if (prev) return;
 
             micIsActive_.store(0);
-            RefreshDeviceState();
             startImpl();
+            RefreshDeviceState();
         }
         void stop()
         {

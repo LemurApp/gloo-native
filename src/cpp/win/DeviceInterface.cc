@@ -62,7 +62,7 @@ public:
       /* [annotation][in] */
       _In_ LPCWSTR pwstrDeviceId)
   {
-    // std::wcout << "Device Added: " << pwstrDeviceId << std::endl;
+    std::wcout << "Device Added: " << pwstrDeviceId << std::endl;
     return S_OK;
   }
 
@@ -70,7 +70,7 @@ public:
       /* [annotation][in] */
       _In_ LPCWSTR pwstrDeviceId)
   {
-    // std::wcout << "Device Removed: " << pwstrDeviceId << std::endl;
+    std::wcout << "Device Removed: " << pwstrDeviceId << std::endl;
     return S_OK;
   }
 
@@ -135,7 +135,7 @@ private:
       RETURN_IF_FAILED(collection->Item(i, &device));
       std::wstring deviceId;
       RETURN_IF_FAILED(DeviceId(device, deviceId));
-      RETURN_IF_FAILED(AddDevice(deviceId, device));
+      LOG_IF_FAILED(AddDevice(deviceId, device));
     }
 
     return S_OK;
@@ -155,7 +155,12 @@ private:
 
       DWORD deviceState;
       RETURN_IF_FAILED(device->GetState(&deviceState));
-      if (deviceState != DEVICE_STATE_ACTIVE) return E_NOT_VALID_STATE;
+      if (deviceState != DEVICE_STATE_ACTIVE) {
+        
+        std::cout << "Device is not active: " << deviceState << std::endl;
+        return E_NOT_VALID_STATE;
+
+      }
 
       std::shared_ptr<MicrophoneDevice> spDevice;
       RETURN_IF_FAILED(MicrophoneDevice::Make(deviceId, device, spDevice, this));

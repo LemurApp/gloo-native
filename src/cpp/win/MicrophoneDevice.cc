@@ -65,7 +65,7 @@ HRESULT MicrophoneDevice::OnSessionCreated(IAudioSessionControl *session)
       LOG_IF_FAILED(audioSessionControl->GetDisplayName(&name));
     
 
-      // std::wcout << "New session:(" << deviceId_ << ") " << sessionControllers_.size() << " (" << name.m_pData << ")" << std::endl;
+      std::wcout << "New session:(" << deviceId_ << ") " << sessionControllers_.size() << " (" << name.m_pData << ")" << std::endl;
       AudioSessionState state;
       RETURN_IF_FAILED(audioSessionControl->GetState(&state));
       RETURN_IF_FAILED(OnStateChanged(state, 0));
@@ -84,7 +84,7 @@ HRESULT MicrophoneDevice::OnStateChanged(
   switch (state)
   {
   case AudioSessionStateExpired:
-    // std::wcout << "Session Expired:(" << deviceId_ << ")" << std::endl;
+    std::wcout << "Session Expired:(" << deviceId_ << ")" << std::endl;
     break;
   case AudioSessionStateInactive:
     UpdateState(false, false_value);
@@ -99,7 +99,7 @@ HRESULT MicrophoneDevice::OnStateChanged(
 void MicrophoneDevice::UpdateState(bool state, int false_value)
 {
   const int prev = inUse_.fetch_add(state ? 1 : false_value, std::memory_order_relaxed);
-  // std::wcout << "Device::(" << deviceId_ << ") " << (state ? "ON" : "OFF") << " " << prev << " --> " << (prev + (state ? 1 : false_value)) << std::endl;
+  std::wcout << "Device::(" << deviceId_ << ") " << (state ? "ON" : "OFF") << " " << prev << " --> " << (prev + (state ? 1 : false_value)) << std::endl;
   if (false_value != 0) {
     owner_->RefreshDeviceState();
   }
