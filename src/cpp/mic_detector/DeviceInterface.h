@@ -1,73 +1,64 @@
 #pragma once
 
-#include <string>
 #include <atomic>
 #include <functional>
+#include <string>
 
-namespace Gloo::Internal::MicDetector
-{
+namespace Gloo::Internal::MicDetector {
 
-    class DeviceManager
-    {
+class DeviceManager {
 
-    public:
-        typedef std::function<void(bool)> Callback;
-        
-        DeviceManager(Callback cb) : callback_(cb) {}
-        
-        virtual ~DeviceManager() { stop(); }
+public:
+  typedef std::function<void(bool)> Callback;
 
-        void start()
-        {
-            const bool prev = running_.exchange(true);
-            if (prev) return;
+  DeviceManager(Callback cb) : callback_(cb) {}
 
-            micIsActive_.store(0);
-            startImpl();
-            RefreshDeviceState();
-        }
-        void stop()
-        {
-            const bool prev = running_.exchange(false);
-            if (prev) {
-                stopImpl();
-            }
-        }
+  virtual ~DeviceManager() { stop(); }
 
-        void RefreshDeviceState() {
-            SetActive(IsActive());
-        }
+  void start() {
+    const bool prev = running_.exchange(true);
+    if (prev)
+      return;
 
-    protected:
-        void SetActive(bool value)
-        {
-            const auto next = value ? 2 : 1;
-            const auto prev = micIsActive_.exchange(next);
-            if (next != prev)
-            {
-                callback_(next == 2);
-            }
-        }
+    micIsActive_.store(0);
+    startImpl();
+    RefreshDeviceState();
+  }
+  void stop() {
+    const bool prev = running_.exchange(false);
+    if (prev) {
+      stopImpl();
+    }
+  }
 
-        bool IsTracking() const {
-            return running_.load();
-        }
-        
-        virtual bool IsActive() = 0;
-        virtual void startImpl() = 0;
-        virtual void stopImpl() = 0;
+  void RefreshDeviceState() { SetActive(IsActive()); }
 
-    private:
-        // This int is used like an enum
-        // 0: UNKNOWN
-        // 1: MIC OFF
-        // 2: MIC ON
-        Callback callback_;
-        
-        std::atomic<bool> running_{0};
-        std::atomic<int> micIsActive_;
-    };
+protected:
+  void SetActive(bool value) {
+    const auto next = value ? 2 : 1;
+    const auto prev = micIsActive_.exchange(next);
+    if (next != prev) {
+      callback_(next == 2);
+    }
+  }
 
-    std::shared_ptr<DeviceManager> MakeDeviceManager(DeviceManager::Callback cb);
+  bool IsTracking() const { return running_.load(); }
 
+  virtual bool IsActive() = 0;
+  virtual void startImpl() = 0;
+  virtual void stopImpl() = 0;
+
+private:
+  // This int is used like an enum
+  // 0: UNKNOWN
+  // 1: MIC OFF
+  // 2: MIC ON
+  Callback callback_;
+
+  std::atomic<bool> running_{0};
+  std::atomic<int> micIsActive_;
 };
+
+std::shared_ptr<DeviceManager> MakeDeviceManager(DeviceManager::Callback cb);
+
+}; // namespace Gloo::Internal::MicDetector
