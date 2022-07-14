@@ -1,19 +1,17 @@
 #include "MicrophoneDevice.h"
-#include <memory>
-#include <vector>
-
-#include <windows.h>
 
 #include <atlbase.h>
 #include <audiopolicy.h>
 #include <comdef.h>
 #include <mmdeviceapi.h>
+#include <windows.h>
 
-namespace Gloo::Internal::MicDetector {
-HRESULT MicrophoneDevice::StartListening() {
-  if (tracking_.load())
-    return S_OK;
+#include <memory>
+#include <vector>
 
+namespace Gloo::Internal::MicDetector::Windows {
+
+void MicrophoneDevice::startTrackingDeviceImpl() {
   CComPtr<IAudioSessionEnumerator> sessionList;
   RETURN_IF_FAILED(manager_->GetSessionEnumerator(&sessionList));
   int count;
@@ -26,13 +24,11 @@ HRESULT MicrophoneDevice::StartListening() {
 
   std::cout << "Registering for RegisterSessionNotification" << std::endl;
   RETURN_IF_FAILED(manager_->RegisterSessionNotification(this));
-  tracking_.store(true);
   return S_OK;
 }
 
 HRESULT MicrophoneDevice::StopListening() {
-  if (!tracking_.load())
-    return S_OK;
+  if (!tracking_.load()) return S_OK;
 
   RETURN_IF_FAILED(manager_->UnregisterSessionNotification(this));
   for (auto &controller : sessionControllers_) {
@@ -80,15 +76,15 @@ HRESULT MicrophoneDevice::OnStateChanged(
     /* [annotation][in] */
     _In_ AudioSessionState state, _In_ int false_value) {
   switch (state) {
-  case AudioSessionStateExpired:
-    std::wcout << "Session Expired:(" << deviceId_ << ")" << std::endl;
-    break;
-  case AudioSessionStateInactive:
-    UpdateState(false, false_value);
-    break;
-  case AudioSessionStateActive:
-    UpdateState(true, false_value);
-    break;
+    case AudioSessionStateExpired:
+      std::wcout << "Session Expired:(" << deviceId_ << ")" << std::endl;
+      break;
+    case AudioSessionStateInactive:
+      UpdateState(false, false_value);
+      break;
+    case AudioSessionStateActive:
+      UpdateState(true, false_value);
+      break;
   }
   return S_OK;
 }
@@ -103,4 +99,4 @@ void MicrophoneDevice::UpdateState(bool state, int false_value) {
     owner_->RefreshDeviceState();
   }
 }
-} // namespace Gloo::Internal::MicDetector
+}  // namespace Gloo::Internal::MicDetector

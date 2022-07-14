@@ -13,14 +13,14 @@
                 'CLANG_CXX_LIBRARY': 'libc++',
                 'MACOSX_DEPLOYMENT_TARGET': '10.9',
                 'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
-                'OTHER_CPLUSPLUSFLAGS' : ["-std=c++17"],
+                'OTHER_CPLUSPLUSFLAGS' : ["-std=c++17", "-DDEBUG"],
                 'OTHER_LDFLAGS': [
                     '-framework Foundation',
                     '-framework CoreFoundation',
                     '-framework AudioToolbox'
                 ],
             },
-            "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/darwin/DeviceInterface.cc'],
+            "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/darwin/OSXDeviceManager.cc', 'src/cpp/darwin/OSXHelpers.cc'],
         }], # OS==mac
         [ 'OS=="win"', {
             "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/win/DeviceInterface.cc', 'src/cpp/win/MicrophoneDevice.cc'],
@@ -44,7 +44,8 @@
       'cflags': ['-g', '-exceptions'],
       'cflags_cc': ['-g', '-exceptions', "-std=c++17" ],
       "include_dirs": [
-        "<!@(node -p \"require('node-addon-api').include\")"
+        "<!@(node -p \"require('node-addon-api').include\")",
+        "./src/cpp/third_party/spdlog/include"
       ],
     }
   ]

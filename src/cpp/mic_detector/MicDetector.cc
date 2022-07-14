@@ -1,14 +1,16 @@
 #include "MicDetector.h"
-#include "DeviceInterface.h"
+
 #include <chrono>
 #include <thread>
+
+#include "DeviceManager.h"
 using namespace std::chrono_literals;
 
 namespace Gloo::Internal::MicDetector {
-void MicrophoneDetector::resume() { mgr_->start(); }
+void MicrophoneDetector::resume() { mgr_->startTracking(); }
 
 void MicrophoneDetector::pause() {
-  mgr_->stop();
+  mgr_->stopTracking();
   {
     std::unique_lock<std::mutex> lk(m_);
     callbacks_.clear();
@@ -29,11 +31,11 @@ void MicrophoneDetector::unregisterCallback(int callbackId) {
   this->callbacks_.erase(callbackId);
 }
 
-void MicrophoneDetector::stateChanged(bool state) const {
-
+void MicrophoneDetector::stateChanged(IDeviceManager::MicActivity state) const {
   const auto eachCb = [state](Napi::Env env, std::vector<napi_value> &args) {
     const auto eventName = Napi::String::New(env, "mic");
-    const auto micData = Napi::Boolean::New(env, state);
+    const auto micData =
+        Napi::Boolean::New(env, state == IDeviceManager::MicActivity::kOn);
     args = {eventName, micData};
   };
 
@@ -43,4 +45,4 @@ void MicrophoneDetector::stateChanged(bool state) const {
   }
 }
 
-} // namespace Gloo::Internal::MicDetector
+}  // namespace Gloo::Internal::MicDetector
