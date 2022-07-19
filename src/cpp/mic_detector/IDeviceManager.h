@@ -46,6 +46,7 @@ class IDeviceManager : public ITrackable {
 
  protected:
   virtual void startTrackingImpl() {
+    _activeMicCount.store(0);
     _anyMicActive.store(MicActivity::kUnknown);
     _volume.store(-1);
   }
