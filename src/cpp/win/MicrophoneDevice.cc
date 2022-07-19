@@ -1,21 +1,19 @@
 #include "MicrophoneDevice.h"
-#include <memory>
-#include <vector>
-
-#include <windows.h>
 
 #include <atlbase.h>
 #include <audiopolicy.h>
 #include <comdef.h>
 #include <mmdeviceapi.h>
+#include <windows.h>
 
-namespace Gloo::Internal::MicDetector {
-HRESULT MicrophoneDevice::StartListening() {
-  if (tracking_.load())
-    return S_OK;
+#include <memory>
+#include <vector>
 
+namespace Gloo::Internal::MicDetector::Windows {
+
+HRESULT MicrophoneDevice::winStartTrackingDeviceImpl() {
   CComPtr<IAudioSessionEnumerator> sessionList;
-  RETURN_IF_FAILED(manager_->GetSessionEnumerator(&sessionList));
+  RETURN_IF_FAILED(_sessionManager->GetSessionEnumerator(&sessionList));
   int count;
   RETURN_IF_FAILED(sessionList->GetCount(&count));
   for (int i = 0; i < count; ++i) {
@@ -24,83 +22,67 @@ HRESULT MicrophoneDevice::StartListening() {
     RETURN_IF_FAILED(OnSessionCreated(controller));
   }
 
-  std::cout << "Registering for RegisterSessionNotification" << std::endl;
-  RETURN_IF_FAILED(manager_->RegisterSessionNotification(this));
-  tracking_.store(true);
+  RETURN_IF_FAILED(_sessionManager->RegisterSessionNotification(this));
   return S_OK;
 }
 
-HRESULT MicrophoneDevice::StopListening() {
-  if (!tracking_.load())
-    return S_OK;
-
-  RETURN_IF_FAILED(manager_->UnregisterSessionNotification(this));
-  for (auto &controller : sessionControllers_) {
+HRESULT MicrophoneDevice::winStopTrackingDeviceImpl() {
+  RETURN_IF_FAILED(_sessionManager->UnregisterSessionNotification(this));
+  for (auto &controller : _sessionControllers) {
     RETURN_IF_FAILED(controller->UnregisterAudioSessionNotification(this));
   }
-  sessionControllers_.clear();
-  tracking_.store(false);
+  _sessionControllers.clear();
   return S_OK;
 }
 
 // Takes ownership of device.
-HRESULT MicrophoneDevice::Make(const std::wstring &deviceId,
+HRESULT MicrophoneDevice::Make(const AudioDeviceId &deviceId,
                                CComPtr<IMMDevice> &device,
-                               std::shared_ptr<MicrophoneDevice> &output,
-                               DeviceManager *owner) {
-  CComPtr<IAudioSessionManager2> manager;
+                               std::shared_ptr<IMicrophoneDevice> &output,
+                               IDeviceManager *manager) {
+  CComPtr<IAudioSessionManager2> session_manager;
   RETURN_IF_FAILED(device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL,
-                                    nullptr, (void **)(&manager)));
-  output.reset(new MicrophoneDevice(owner, deviceId, manager));
+                                    nullptr, (void **)(&session_manager)));
+  output.reset(new MicrophoneDevice(deviceId, manager, session_manager));
   return S_OK;
 }
 
 HRESULT MicrophoneDevice::OnSessionCreated(IAudioSessionControl *session) {
   CComPtr<IAudioSessionControl2> audioSessionControl;
-  if (SUCCEEDED(session->QueryInterface(&audioSessionControl))) {
+  IF_SUCCEEDED(session->QueryInterface(&audioSessionControl)) {
     if (audioSessionControl->IsSystemSoundsSession() == S_FALSE) {
-      CComHeapPtr<WCHAR> name;
-      LOG_IF_FAILED(audioSessionControl->GetDisplayName(&name));
+      if (spdlog::get_level() >= spdlog::level::debug) {
+        CComHeapPtr<WCHAR> name;
+        LOG_IF_FAILED(audioSessionControl->GetDisplayName(&name));
+        spdlog::debug("New session (Device:{}) {} {}", _deviceId, _sessionControllers.size(), to_utf8(name.m_pData));
+      }
 
-      std::wcout << "New session:(" << deviceId_ << ") "
-                 << sessionControllers_.size() << " (" << name.m_pData << ")"
-                 << std::endl;
-      AudioSessionState state;
-      RETURN_IF_FAILED(audioSessionControl->GetState(&state));
-      RETURN_IF_FAILED(OnStateChanged(state, 0));
-      RETURN_IF_FAILED(
-          audioSessionControl->RegisterAudioSessionNotification(this));
-      sessionControllers_.push_back(audioSessionControl);
+      AudioSessionState state = AudioSessionState::AudioSessionStateExpired;
+      LOG_IF_FAILED(audioSessionControl->GetState(&state));
+      winUpdateState(state, true);
+
+      IF_SUCCEEDED(
+          audioSessionControl->RegisterAudioSessionNotification(this)) {
+      _sessionControllers.push_back(audioSessionControl);
+          }
     }
   }
   return S_OK;
 }
 
-HRESULT MicrophoneDevice::OnStateChanged(
-    /* [annotation][in] */
-    _In_ AudioSessionState state, _In_ int false_value) {
-  switch (state) {
-  case AudioSessionStateExpired:
-    std::wcout << "Session Expired:(" << deviceId_ << ")" << std::endl;
-    break;
-  case AudioSessionStateInactive:
-    UpdateState(false, false_value);
-    break;
-  case AudioSessionStateActive:
-    UpdateState(true, false_value);
-    break;
-  }
-  return S_OK;
-}
+void MicrophoneDevice::winUpdateState(AudioSessionState state, bool initialCall) {
+  if (state != AudioSessionState::AudioSessionStateActive && state != AudioSessionState::AudioSessionStateInactive) return;
+  
+  bool active = state == AudioSessionState::AudioSessionStateActive;
+  // Don't increment the device if a session turns on.
+  int increment = active ? 1 : (initialCall ? 0 : -1);
 
-void MicrophoneDevice::UpdateState(bool state, int false_value) {
-  const int prev =
-      inUse_.fetch_add(state ? 1 : false_value, std::memory_order_relaxed);
-  std::wcout << "Device::(" << deviceId_ << ") " << (state ? "ON" : "OFF")
-             << " " << prev << " --> " << (prev + (state ? 1 : false_value))
-             << std::endl;
-  if (false_value != 0) {
-    owner_->RefreshDeviceState();
+  const int prev = _micActivity.fetch_add(increment, std::memory_order_relaxed);
+  const int next = prev + increment;
+  spdlog::debug("Device::({}) {} {}->{}", _deviceId, (state ? "ON" : "OFF"), prev, next);
+
+  if ((prev > 0) != (next > 0)) {
+    refreshState(active, initialCall);
   }
 }
-} // namespace Gloo::Internal::MicDetector
+}  // namespace Gloo::Internal::MicDetector

@@ -1,13 +1,19 @@
+#include <napi.h>
+#include <spdlog/spdlog.h>
+
 #include "mic_detector/MicDetector.h"
 #include "napi-thread-safe-callback.h"
-#include <iostream>
-#include <napi.h>
 
 using Gloo::Internal::MicDetector::MicrophoneDetector;
 using Gloo::Internal::MicDetector::MicrophoneState;
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-  std::cout << "GLOO-NATIVE: VERSION: 3.1.1" << std::endl;
+  spdlog::set_pattern("[%H:%M:%S %z] [Gloo-Native] [thread %t] %v");
+  
+  // For now we use verbose logging. Eventually we can losen this up.
+  spdlog::set_level(spdlog::level::debug);
+
+  spdlog::info("VERSION: 3.1.1");
   exports.Set(Napi::String::New(env, "startMicrophoneDetection"),
               Napi::Function::New(env, [&](const Napi::CallbackInfo &info) {
                 Napi::Env env = info.Env();

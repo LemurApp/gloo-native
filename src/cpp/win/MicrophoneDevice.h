@@ -1,44 +1,41 @@
 #pragma once
 
-#include "../mic_detector/DeviceInterface.h"
-#include "helpers.h"
-#include <memory>
-#include <vector>
-
-#include <windows.h>
-
 #include <atlbase.h>
 #include <audiopolicy.h>
 #include <comdef.h>
 #include <mmdeviceapi.h>
+#include <windows.h>
+
+#include <atomic>
+#include <memory>
+#include <vector>
+#include <mutex>
+
+#include "../mic_detector/IDevice.h"
+#include "helpers.h"
 
 namespace Gloo::Internal::MicDetector {
+namespace Windows {
 class MicrophoneDevice final : public IAudioSessionNotification,
-                               public IAudioSessionEvents {
-  MicrophoneDevice(DeviceManager *owner, const std::wstring &deviceId,
-                   CComPtr<IAudioSessionManager2> manager)
-      : deviceId_(deviceId), manager_(manager), owner_(owner) {}
+                               public IAudioSessionEvents,
+                               public IMicrophoneDevice {
 
-public:
+                                MicrophoneDevice(AudioDeviceId deviceId, IDeviceManager *manager,
+                   CComPtr<IAudioSessionManager2> sessionManager)
+      : IMicrophoneDevice(deviceId, manager), _sessionManager(sessionManager) {}
+ public:
+  static HRESULT MicrophoneDevice::Make(const AudioDeviceId &deviceId,
+                               CComPtr<IMMDevice> &device,
+                               std::shared_ptr<IMicrophoneDevice> &output,
+                               IDeviceManager *manager);
+
   DEFAULT_ADDREF_RELEASE()
   QUERYINTERFACE_HELPER() {
     *object = nullptr;
     return E_NOINTERFACE;
   }
 
-  ~MicrophoneDevice() { LOG_IF_FAILED(StopListening()); }
-
-  std::wstring Id() const { return deviceId_; }
-
-  HRESULT StartListening();
-  HRESULT StopListening();
-
-  bool IsActive() const { return inUse_.load(); }
-
-  // Takes ownership of device.
-  static HRESULT Make(const std::wstring &deviceId, CComPtr<IMMDevice> &device,
-                      std::shared_ptr<MicrophoneDevice> &output,
-                      DeviceManager *owner);
+  ~MicrophoneDevice() { stopTracking(); }
 
   // ---
   // IAudioSessionNotification
@@ -50,71 +47,72 @@ public:
   // ---
   HRESULT STDMETHODCALLTYPE OnStateChanged(
       /* [annotation][in] */
-      _In_ AudioSessionState state, _In_ int false_value);
-  HRESULT STDMETHODCALLTYPE OnStateChanged(
-      /* [annotation][in] */
       _In_ AudioSessionState state) {
-    return OnStateChanged(state, -1);
+    winUpdateState(state, false);
+    return S_OK;
   }
 
   // The rest of the callbacks are currently not used.
-  HRESULT STDMETHODCALLTYPE OnDisplayNameChanged(
-      /* [annotation][string][in] */
-      _In_ LPCWSTR NewDisplayName,
-      /* [in] */ LPCGUID EventContext) {
+  HRESULT STDMETHODCALLTYPE OnDisplayNameChanged(_In_ LPCWSTR NewDisplayName,
+                                                 LPCGUID EventContext) {
     return S_OK;
   }
 
-  HRESULT STDMETHODCALLTYPE OnIconPathChanged(
-      /* [annotation][string][in] */
-      _In_ LPCWSTR NewIconPath,
-      /* [in] */ LPCGUID EventContext) {
+  HRESULT STDMETHODCALLTYPE OnIconPathChanged(_In_ LPCWSTR NewIconPath,
+                                              LPCGUID EventContext) {
     return S_OK;
   }
 
-  HRESULT STDMETHODCALLTYPE OnSimpleVolumeChanged(
-      /* [annotation][in] */
-      _In_ float NewVolume,
-      /* [annotation][in] */
-      _In_ BOOL NewMute,
-      /* [in] */ LPCGUID EventContext) {
+  HRESULT STDMETHODCALLTYPE OnSimpleVolumeChanged(_In_ float NewVolume,
+                                                  _In_ BOOL NewMute,
+                                                  LPCGUID EventContext) {
     return S_OK;
   }
 
-  HRESULT STDMETHODCALLTYPE OnChannelVolumeChanged(
-      /* [annotation][in] */
-      _In_ DWORD ChannelCount,
-      /* [annotation][size_is][in] */
-      _In_reads_(ChannelCount) float NewChannelVolumeArray[],
-      /* [annotation][in] */
-      _In_ DWORD ChangedChannel,
-      /* [in] */ LPCGUID EventContext) {
+  HRESULT STDMETHODCALLTYPE
+  OnChannelVolumeChanged(_In_ DWORD ChannelCount,
+                         _In_reads_(ChannelCount) float NewChannelVolumeArray[],
+                         _In_ DWORD ChangedChannel, LPCGUID EventContext) {
     return S_OK;
   }
 
-  HRESULT STDMETHODCALLTYPE OnGroupingParamChanged(
-      /* [annotation][in] */
-      _In_ LPCGUID NewGroupingParam,
-      /* [in] */ LPCGUID EventContext) {
+  HRESULT STDMETHODCALLTYPE
+  OnGroupingParamChanged(_In_ LPCGUID NewGroupingParam, LPCGUID EventContext) {
     return S_OK;
   }
 
-  HRESULT STDMETHODCALLTYPE OnSessionDisconnected(
-      /* [annotation][in] */
-      _In_ AudioSessionDisconnectReason DisconnectReason) {
+  HRESULT STDMETHODCALLTYPE
+  OnSessionDisconnected(_In_ AudioSessionDisconnectReason DisconnectReason) {
     return S_OK;
   }
 
 private:
-  void UpdateState(bool state, int false_value = -1);
+  bool getStateFromDevice() const {
+    auto state = _micActivity.load();
+    spdlog::debug("Device state:{}: {}", _deviceId, state);
+    return state > 0;
+  }
 
-  const std::wstring deviceId_;
+  void startTrackingDeviceImpl() {
+    LOG_IF_FAILED(winStartTrackingDeviceImpl());
+  }
+  void stopTrackingDeviceImpl() {
+    LOG_IF_FAILED(winStopTrackingDeviceImpl());
+    _micActivity.store(0);
+  }
+  HRESULT winStartTrackingDeviceImpl();
+  HRESULT winStopTrackingDeviceImpl();
+  void winUpdateState(AudioSessionState state, bool initialCall);
 
-  std::atomic<bool> tracking_ = false;
-  std::atomic<int> inUse_;
-  const CComPtr<IAudioSessionManager2> manager_;
 
-  std::vector<CComPtr<IAudioSessionControl2>> sessionControllers_;
-  DeviceManager *owner_;
+ private:
+  std::atomic<int> _micActivity = 0;
+  
+  std::mutex _m;
+  // Manages the lifetime of the device.
+  const CComPtr<IAudioSessionManager2> _sessionManager;
+  // Manages each instance of the device being used.
+  std::vector<CComPtr<IAudioSessionControl2>> _sessionControllers;
 };
-} // namespace Gloo::Internal::MicDetector
+}  // namespace Windows
+}  // namespace Gloo::Internal::MicDetector
