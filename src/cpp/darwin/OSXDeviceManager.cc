@@ -32,11 +32,11 @@ class OSXDeviceManager final : public DeviceManager {
 
   void refreshDeviceList(bool maybeInitializeDevice) {
     // Get all input devices.
-    std::unordered_set<AudioDeviceId> input_devices;
+    std::unordered_set<AudioDeviceId> input_device_ids;
     auto device_list = OSX_GetAudioDeviceHandles();
     device_list.forEach([&](AudioDeviceId d) {
       if (OSX_IsInputDevice(d)) {
-        input_devices.insert(d);
+        input_device_ids.insert(d);
       }
     });
 
@@ -45,17 +45,17 @@ class OSXDeviceManager final : public DeviceManager {
       std::unique_lock<std::mutex> lk_(_m);
       for (auto it = begin(_mics); it != end(_mics);) {
         const auto key = it->first;
-        if (input_devices.count(key) == 0) {
+        if (input_device_ids.count(key) == 0) {
           // Item is no longer present, remove it.
           it = _mics.erase(it);
         } else {
           // Already tracking this item, don't recreate it.
-          input_devices.erase(key);
+          input_device_ids.erase(key);
           ++it;
         }
       }
       bool withTrackingOn = isTracking();
-      for (auto& id : input_devices) {
+      for (auto& id : input_device_ids) {
         auto device =
             std::shared_ptr<IMicrophoneDevice>(new MicrophoneDevice(id, this));
         _mics[id] = device;

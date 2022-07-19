@@ -6,10 +6,12 @@
 #include <mmdeviceapi.h>
 #include <windows.h>
 
+#include <atomic>
 #include <memory>
 #include <vector>
+#include <mutex>
 
-#include "../mic_detector/DeviceInterface.h"
+#include "../mic_detector/IDevice.h"
 #include "helpers.h"
 
 namespace Gloo::Internal::MicDetector {
@@ -17,11 +19,16 @@ namespace Windows {
 class MicrophoneDevice final : public IAudioSessionNotification,
                                public IAudioSessionEvents,
                                public IMicrophoneDevice {
-  MicrophoneDevice(AudioDeviceId deviceId, IDeviceManager *manager,
-                   CComPtr<IAudioSessionManager2> session_manager)
-      : IMicrophoneDevice(deviceId, manager), manager_(session_manager) {}
 
+                                MicrophoneDevice(AudioDeviceId deviceId, IDeviceManager *manager,
+                   CComPtr<IAudioSessionManager2> sessionManager)
+      : IMicrophoneDevice(deviceId, manager), _sessionManager(sessionManager) {}
  public:
+  static HRESULT MicrophoneDevice::Make(const AudioDeviceId &deviceId,
+                               CComPtr<IMMDevice> &device,
+                               std::shared_ptr<IMicrophoneDevice> &output,
+                               IDeviceManager *manager);
+
   DEFAULT_ADDREF_RELEASE()
   QUERYINTERFACE_HELPER() {
     *object = nullptr;
@@ -29,11 +36,6 @@ class MicrophoneDevice final : public IAudioSessionNotification,
   }
 
   ~MicrophoneDevice() { stopTracking(); }
-
-  bool getStateFromDevice() const;
-
-  void startTrackingDeviceImpl();
-  void stopTrackingDeviceImpl();
 
   // ---
   // IAudioSessionNotification
@@ -46,7 +48,8 @@ class MicrophoneDevice final : public IAudioSessionNotification,
   HRESULT STDMETHODCALLTYPE OnStateChanged(
       /* [annotation][in] */
       _In_ AudioSessionState state) {
-    this->refreshState(state == AudioSessionState::kConnected);
+    winUpdateState(state, false);
+    return S_OK;
   }
 
   // The rest of the callbacks are currently not used.
@@ -83,10 +86,33 @@ class MicrophoneDevice final : public IAudioSessionNotification,
     return S_OK;
   }
 
- private:
-  std::atomic<AudioSessionState> state_;
+private:
+  bool getStateFromDevice() const {
+    auto state = _micActivity.load();
+    spdlog::debug("Device state:{}: {}", _deviceId, state);
+    return state > 0;
+  }
 
-  const CComPtr<IAudioSessionManager2> manager_;
+  void startTrackingDeviceImpl() {
+    LOG_IF_FAILED(winStartTrackingDeviceImpl());
+  }
+  void stopTrackingDeviceImpl() {
+    LOG_IF_FAILED(winStopTrackingDeviceImpl());
+    _micActivity.store(0);
+  }
+  HRESULT winStartTrackingDeviceImpl();
+  HRESULT winStopTrackingDeviceImpl();
+  void winUpdateState(AudioSessionState state, bool initialCall);
+
+
+ private:
+  std::atomic<int> _micActivity = 0;
+  
+  std::mutex _m;
+  // Manages the lifetime of the device.
+  const CComPtr<IAudioSessionManager2> _sessionManager;
+  // Manages each instance of the device being used.
+  std::vector<CComPtr<IAudioSessionControl2>> _sessionControllers;
 };
 }  // namespace Windows
 }  // namespace Gloo::Internal::MicDetector

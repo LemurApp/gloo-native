@@ -17,7 +17,7 @@ namespace Gloo::Internal::MicDetector {
 #ifdef __APPLE__
 using AudioDeviceId = AudioObjectID;
 #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-using AudioDeviceId = std::wstring;
+using AudioDeviceId = std::string;
 #endif
 
 // Interface representing a device (either Mic or Speaker).
@@ -41,6 +41,7 @@ class IDevice : public ITrackable {
     static_assert(std::is_same_v<T, int> || std::is_same_v<T, bool>,
                   "Only ints or bools allowed");
     const T prev = _deviceValue.exchange(value);
+    spdlog::debug("REFRESHING DEVICE STATE: {} ({}->{}) [{}]", _deviceId, prev, value, initialCall);
     if (initialCall || prev != value) {
       if constexpr (std::is_same_v<T, int>) {
         _manager->setVolume(value, initialCall);
@@ -61,7 +62,7 @@ class IDevice : public ITrackable {
   }
   void startTrackingImpl() final {
     spdlog::debug("Starting device tracking {}", _deviceId);
-    refreshState(true);
+    refreshState(getStateFromDevice(), true);
     startTrackingDeviceImpl();
   }
 
@@ -69,8 +70,7 @@ class IDevice : public ITrackable {
 
  private:
   IDeviceManager* const _manager;
-  std::atomic<bool> _tracking;
-  std::atomic<T> _deviceValue;
+  std::atomic<T> _deviceValue = 0;
 };
 
 using IMicrophoneDevice = IDevice<bool>;

@@ -9,9 +9,9 @@ using Gloo::Internal::MicDetector::MicrophoneState;
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
   spdlog::set_pattern("[%H:%M:%S %z] [Gloo-Native] [thread %t] %v");
-#ifdef DEBUG
+  
+  // For now we use verbose logging. Eventually we can losen this up.
   spdlog::set_level(spdlog::level::debug);
-#endif
 
   spdlog::info("VERSION: 3.1.1");
   exports.Set(Napi::String::New(env, "startMicrophoneDetection"),

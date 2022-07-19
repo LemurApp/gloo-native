@@ -71,7 +71,7 @@ class DeviceManager : public IDeviceManager {
 
   std::mutex _m;
   std::unordered_map<AudioDeviceId, std::shared_ptr<IMicrophoneDevice>> _mics;
-  std::unordered_map<AudioDeviceId, std::shared_ptr<SpeakerDevice>> _speakers;
+  std::unordered_map<AudioDeviceId, std::shared_ptr<ISpeakerDevice>> _speakers;
 };
 
 std::shared_ptr<DeviceManager> MakeDeviceManager(
