@@ -31,7 +31,7 @@ class ITrackable {
   virtual void stopTrackingImpl() = 0;
 
  private:
-  std::atomic<bool> _tracking;
+  std::atomic<bool> _tracking = false;
 };
 
 }  // namespace Gloo::Internal::MicDetector

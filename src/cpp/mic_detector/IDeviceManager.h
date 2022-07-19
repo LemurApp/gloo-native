@@ -52,9 +52,9 @@ class IDeviceManager : public ITrackable {
   }
 
  private:
-  std::atomic<int> _activeMicCount;
-  std::atomic<MicActivity> _anyMicActive;
-  std::atomic<int> _volume;
+  std::atomic<int> _activeMicCount = 0;
+  std::atomic<MicActivity> _anyMicActive = MicActivity::kUnknown;
+  std::atomic<int> _volume = -1;
 
   const OnMicChangeCallback _onMicChange;
   const OnVolumeChangeCallback _onVolumeChange;
