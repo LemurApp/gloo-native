@@ -10,6 +10,13 @@
 #include <system_error>
 #include <vector>
 
+#ifdef __MAC_OS_X_VERSION_MAX_ALLOWED
+#if __MAC_OS_X_VERSION_MAX_ALLOWED < 120000
+const AudioObjectPropertyScope kAudioObjectPropertyElementMain =
+    kAudioObjectPropertyElementMaster;
+#endif
+#endif
+
 namespace Gloo::Internal::MicDetector::Darwin {
 
 uint32_t OSX_SafeAudioObjectGetPropertySize(
