@@ -1,21 +1,20 @@
-#include "../mic_detector/DeviceManager.h"
-#include "MicrophoneDevice.h"
-#include "helpers.h"
-#include <mutex>
-#include <unordered_set>
-#include <vector>
-#include <codecvt>
-
-#include <windows.h>
-
-#include <initguid.h>
-
 #include <atlbase.h>
 #include <audiopolicy.h>
 #include <comdef.h>
+#include <initguid.h>
 #include <mmdeviceapi.h>
 #include <mmsystem.h>
 #include <uuids.h>
+#include <windows.h>
+
+#include <codecvt>
+#include <mutex>
+#include <unordered_set>
+#include <vector>
+
+#include "../mic_detector/DeviceManager.h"
+#include "MicrophoneDevice.h"
+#include "helpers.h"
 
 namespace Gloo::Internal::MicDetector {
 namespace Windows {
@@ -30,12 +29,12 @@ HRESULT GetDeviceId(const CComPtr<IMMDevice> &device, AudioDeviceId &deviceId) {
 
 class WindowsDeviceInterface final : public DeviceManager,
                                      public IMMNotificationClient {
-
-public:
+ public:
   WindowsDeviceInterface(IDeviceManager::OnMicChangeCallback cb0,
                          IDeviceManager::OnVolumeChangeCallback cb1,
                          CComPtr<IMMDeviceEnumerator> &deviceList)
       : DeviceManager(cb0, cb1), pEnumerator(deviceList) {}
+  ~WindowsDeviceInterface() { stopTracking(); }
 
   DEFAULT_ADDREF_RELEASE()
   QUERYINTERFACE_HELPER() {
@@ -67,13 +66,14 @@ public:
   /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE OnDeviceAdded(
       /* [annotation][in] */
       _In_ LPCWSTR pwstrDeviceId) {
-      spdlog::debug("Device Added: {}", to_utf8(pwstrDeviceId));
+    spdlog::debug("Device Added: {}", to_utf8(pwstrDeviceId));
     return S_OK;
   }
 
   /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE OnDeviceRemoved(
       /* [annotation][in] */
-      _In_ LPCWSTR pwstrDeviceId) {    if (spdlog::get_level() >= spdlog::level::debug) {
+      _In_ LPCWSTR pwstrDeviceId) {
+    if (spdlog::get_level() >= spdlog::level::debug) {
       spdlog::debug("Device Removed: {}", to_utf8(pwstrDeviceId));
     }
     return S_OK;
@@ -87,7 +87,8 @@ public:
       /* [annotation][in] */
       _In_opt_ LPCWSTR pwstrDefaultDeviceId) {
     if (spdlog::get_level() >= spdlog::level::debug) {
-      auto devId = pwstrDefaultDeviceId ? to_utf8(pwstrDefaultDeviceId) : "NONE";
+      auto devId =
+          pwstrDefaultDeviceId ? to_utf8(pwstrDefaultDeviceId) : "NONE";
       spdlog::debug("Device Default changed: {}", devId);
     }
     return S_OK;
@@ -101,8 +102,7 @@ public:
     return S_OK;
   }
 
-private:
-
+ private:
   HRESULT winRefreshDeviceList(bool maybeInitializeDevice) {
     // Get all input devices.
     std::unordered_map<AudioDeviceId, CComPtr<IMMDevice>> input_devices;
@@ -137,8 +137,7 @@ private:
       bool withTrackingOn = isTracking();
       for (auto &[id, comDevice] : input_devices) {
         std::shared_ptr<IMicrophoneDevice> device;
-        IF_SUCCEEDED(
-            MicrophoneDevice::Make(id, comDevice, device, this)) {
+        IF_SUCCEEDED(MicrophoneDevice::Make(id, comDevice, device, this)) {
           _mics[id] = device;
           if (maybeInitializeDevice && withTrackingOn) {
             devicesToStart.push_back(device);
@@ -160,22 +159,22 @@ private:
 HRESULT MakeDeviceManagerInternal(IDeviceManager::OnMicChangeCallback cb0,
                                   IDeviceManager::OnVolumeChangeCallback cb1,
                                   std::shared_ptr<DeviceManager> &output) {
-  RETURN_IF_FAILED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED |
-                                               COINIT_DISABLE_OLE1DDE));
+  RETURN_IF_FAILED(CoInitializeEx(
+      nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE));
   CComPtr<IMMDeviceEnumerator> pEnumerator;
   RETURN_IF_FAILED(pEnumerator.CoCreateInstance(__uuidof(MMDeviceEnumerator),
                                                 NULL, CLSCTX_ALL));
   output.reset(new WindowsDeviceInterface(cb0, cb1, pEnumerator));
   return S_OK;
 }
-} // namespace Windows
+}  // namespace Windows
 
-std::shared_ptr<DeviceManager>
-MakeDeviceManager(IDeviceManager::OnMicChangeCallback cb0,
-                  IDeviceManager::OnVolumeChangeCallback cb1) {
+std::shared_ptr<DeviceManager> MakeDeviceManager(
+    IDeviceManager::OnMicChangeCallback cb0,
+    IDeviceManager::OnVolumeChangeCallback cb1) {
   std::shared_ptr<DeviceManager> output;
   LOG_IF_FAILED(Windows::MakeDeviceManagerInternal(cb0, cb1, output));
   return output;
 }
 
-} // namespace Gloo::Internal::MicDetector
+}  // namespace Gloo::Internal::MicDetector

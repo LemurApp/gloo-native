@@ -13,7 +13,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
   // For now we use verbose logging. Eventually we can losen this up.
   spdlog::set_level(spdlog::level::debug);
 
-  spdlog::info("VERSION: 4.1.0");
+  spdlog::info("VERSION: 4.3.0");
   exports.Set(Napi::String::New(env, "startMicrophoneDetection"),
               Napi::Function::New(env, [&](const Napi::CallbackInfo &info) {
                 Napi::Env env = info.Env();

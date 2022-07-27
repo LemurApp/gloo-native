@@ -29,6 +29,7 @@ class OSXDeviceManager final : public DeviceManager {
   OSXDeviceManager(IDeviceManager::OnMicChangeCallback cb0,
                    IDeviceManager::OnVolumeChangeCallback cb1)
       : DeviceManager(cb0, cb1) {}
+  ~OSXDeviceManager() { stopTracking(); }
 
   void refreshDeviceList(bool maybeInitializeDevice) {
     // Get all input devices.

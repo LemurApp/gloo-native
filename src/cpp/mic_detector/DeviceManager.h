@@ -22,8 +22,7 @@ class DeviceManager : public IDeviceManager {
   DeviceManager(IDeviceManager::OnMicChangeCallback cb0,
                 IDeviceManager::OnVolumeChangeCallback cb1)
       : IDeviceManager(cb0, cb1) {}
-
-  virtual ~DeviceManager() { stopTracking(); }
+  virtual ~DeviceManager() {}
 
  protected:
   void startTrackingImpl() final {
