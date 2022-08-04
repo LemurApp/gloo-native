@@ -28,7 +28,14 @@ class IDevice : public ITrackable {
       : _deviceId(id), _manager(manager) {
     spdlog::debug("Created device {}", _deviceId);
   }
-  virtual ~IDevice() { spdlog::debug("Destroyed device {}", _deviceId); }
+  virtual ~IDevice() {
+    spdlog::debug("Destroyed device {}", _deviceId);
+    if constexpr (std::is_same_v<T, int>) {
+      refreshState(0);
+    } else if constexpr (std::is_same_v<T, bool>) {
+      refreshState(false);
+    }
+  }
 
   // T getState() final const { return _deviceValue.load(); }
 
