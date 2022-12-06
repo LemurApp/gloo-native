@@ -1,6 +1,6 @@
 {
     "name": "@lemurapp/gloo-native",
-    "version": "4.4.0",
+    "version": "4.4.1",
     "description": "CPP libraries for gloo",
     "repository": {
         "url": "git://github.com/LemurApp/gloo-native.git"
@@ -26,7 +26,7 @@
     "gypfile": true,
     "scripts": {
         "prepare": "git submodule init && git submodule update",
-        "install": "yarn prepare && prebuild-install --runtime napi || node-gyp rebuild",
+        "install": "npm run prepare && prebuild-install --runtime napi || node-gyp rebuild",
         "rebuild": "node-gyp rebuild",
         "upload": "prebuild --runtime napi --upload-all $(cat ~/.prebuildrc)",
         "test": "node src/test-listener.js",
