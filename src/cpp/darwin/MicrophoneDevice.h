@@ -33,6 +33,7 @@ class MicrophoneDevice final : public IMicrophoneDevice {
 
  private:
   bool getStateFromDevice() const {
+   // printAudioDeviceName(_deviceId);
     return OSX_IsDeviceInUseByOthers(_deviceId);
   }
 

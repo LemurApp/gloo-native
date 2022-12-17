@@ -26,7 +26,7 @@ class DeviceManager : public IDeviceManager {
 
  protected:
   void startTrackingImpl() final {
-    spdlog::debug("Starting tracking for all devices");
+    spdlog::debug("Starting tracking for all devicess");
     IDeviceManager::startTrackingImpl();
 
     // First get all devices.

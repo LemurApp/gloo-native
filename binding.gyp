@@ -7,7 +7,8 @@
             'LDFLAGS': [
                 '-framework Foundation',
                 '-framework CoreFoundation',
-                '-framework AudioToolbox'
+                '-framework AudioToolbox',
+                '-framework ApplicationServices'
             ],
             'xcode_settings': {
                 'CLANG_CXX_LIBRARY': 'libc++',
@@ -17,7 +18,8 @@
                 'OTHER_LDFLAGS': [
                     '-framework Foundation',
                     '-framework CoreFoundation',
-                    '-framework AudioToolbox'
+                    '-framework AudioToolbox',
+                    '-framework ApplicationServices'
                 ],
             },
             "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/darwin/OSXDeviceManager.cc', 'src/cpp/darwin/OSXHelpers.cc'],

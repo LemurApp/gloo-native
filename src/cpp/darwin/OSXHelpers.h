@@ -74,6 +74,8 @@ bool OSX_IsDeviceInUseBySelf(AudioObjectID deviceId);
 
 bool OSX_IsDeviceInUseByOthers(AudioObjectID deviceId);
 
+void printAudioDeviceName(AudioObjectID deviceId);
+
 template <typename T>
 void OSX_Subscribe(AudioDeviceID device, AudioObjectPropertySelector prop,
                    T *data) {

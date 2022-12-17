@@ -2,6 +2,9 @@
 
 #include <chrono>
 #include <thread>
+#include <spdlog/spdlog.h>
+#include <string>
+
 
 #include "DeviceManager.h"
 using namespace std::chrono_literals;
@@ -36,6 +39,7 @@ void MicrophoneDetector::stateChanged(IDeviceManager::MicActivity state) const {
     const auto eventName = Napi::String::New(env, "mic");
     const auto micData =
         Napi::Boolean::New(env, state == IDeviceManager::MicActivity::kOn);
+    spdlog::debug("Firing mic event w data");
     args = {eventName, micData};
   };
 

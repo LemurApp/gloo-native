@@ -48,7 +48,7 @@ class IDevice : public ITrackable {
     static_assert(std::is_same_v<T, int> || std::is_same_v<T, bool>,
                   "Only ints or bools allowed");
     const T prev = _deviceValue.exchange(value);
-    spdlog::debug("REFRESHING DEVICE STATE: {} ({}->{}) [{}]", _deviceId, prev,
+    spdlog::debug("REFRESHING DEVICE STATE: deviceId: {} (prev->curr: {}->{}) initial: [{}]", _deviceId, prev,
                   value, initialCall);
     if (initialCall || prev != value) {
       if constexpr (std::is_same_v<T, int>) {
