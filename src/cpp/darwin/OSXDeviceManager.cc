@@ -11,6 +11,8 @@
 namespace Gloo::Internal::MicDetector {
 namespace Darwin {
 
+static const AudioObjectID kWindowManagerDeviceId = UINT32_MAX;
+
 class OSXDeviceManager final : public DeviceManager {
  public:
   static OSStatus OnListener(AudioObjectID inObjectID, UInt32 inNumberAddresses,
@@ -28,7 +30,10 @@ class OSXDeviceManager final : public DeviceManager {
 
   OSXDeviceManager(IDeviceManager::OnMicChangeCallback cb0,
                    IDeviceManager::OnVolumeChangeCallback cb1)
-      : DeviceManager(cb0, cb1) {}
+      : DeviceManager(cb0, cb1) {
+    _mics[kWindowManagerDeviceId] = std::shared_ptr<IMicrophoneDevice>(
+        new AirpodsMicrophoneDevice(kWindowManagerDeviceId, this));
+  }
   ~OSXDeviceManager() { stopTracking(); }
 
   void refreshDeviceList(bool maybeInitializeDevice) {
@@ -46,6 +51,10 @@ class OSXDeviceManager final : public DeviceManager {
       std::unique_lock<std::mutex> lk_(_m);
       for (auto it = begin(_mics); it != end(_mics);) {
         const auto key = it->first;
+        // Special key for airpods
+        if (key == kWindowManagerDeviceId) {
+          continue;
+        }
         if (input_device_ids.count(key) == 0) {
           // Item is no longer present, remove it.
           it = _mics.erase(it);

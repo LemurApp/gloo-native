@@ -24,11 +24,11 @@ uint32_t OSX_SafeAudioObjectGetPropertySize(
 std::string OSX_FromCfString(CFStringRef input) {
   if (input == nullptr) return std::string();
   CFIndex string_length = CFStringGetLength(input);
-  CFIndex string_max_length =
-      CFStringGetMaximumSizeForEncoding(string_length, kCFStringEncodingASCII);
+  CFIndex string_max_length = CFStringGetMaximumSizeForEncoding(
+      string_length, CFStringGetSystemEncoding());
   std::string buffer(string_max_length + 1, '\0');
   if (!CFStringGetCString(input, buffer.data(), string_max_length + 1,
-                          kCFStringEncodingASCII)) {
+                          CFStringGetSystemEncoding())) {
     throw std::invalid_argument("Unable to convert string");
   }
   return buffer;

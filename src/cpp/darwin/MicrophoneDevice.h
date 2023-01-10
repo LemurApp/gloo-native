@@ -7,9 +7,37 @@
 
 #include "../mic_detector/IDevice.h"
 #include "OSXHelpers.h"
+#include "WindowTracker.h"
 
 namespace Gloo::Internal::MicDetector {
 namespace Darwin {
+
+class AirpodsMicrophoneDevice final : public IMicrophoneDevice {
+ public:
+  AirpodsMicrophoneDevice(AudioObjectID inObjectID, IDeviceManager* manager)
+      : IMicrophoneDevice(inObjectID, manager) {
+    WindowTracker::instance().setOnStatus([this](bool status) {
+      const bool prev = state_.exchange(status);
+      if (prev != status) {
+        this->refreshState();
+      }
+    });
+  }
+
+  ~AirpodsMicrophoneDevice() {}
+
+ private:
+  bool getStateFromDevice() const { return state_.load(); }
+
+  void startTrackingDeviceImpl() {
+    // No-ops since WindowTracker is always running.
+  }
+  void stopTrackingDeviceImpl() {
+    // No-ops since WindowTracker is always running.
+  }
+
+  std::atomic<bool> state_;
+};
 
 class MicrophoneDevice final : public IMicrophoneDevice {
  public:

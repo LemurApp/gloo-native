@@ -17,10 +17,11 @@
                 'OTHER_LDFLAGS': [
                     '-framework Foundation',
                     '-framework CoreFoundation',
-                    '-framework AudioToolbox'
+                    '-framework AudioToolbox',
+                    '-framework ApplicationServices'
                 ],
             },
-            "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/darwin/OSXDeviceManager.cc', 'src/cpp/darwin/OSXHelpers.cc'],
+            "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/darwin/OSXDeviceManager.cc', 'src/cpp/darwin/OSXHelpers.cc', 'src/cpp/darwin/WindowTracker.cc'],
         }], # OS==mac
         [ 'OS=="win"', {
             "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/win/DeviceInterface.cc', 'src/cpp/win/MicrophoneDevice.cc'],
