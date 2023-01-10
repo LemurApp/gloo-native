@@ -1,4 +1,4 @@
-#include "WindowTracker.h"
+#include "../screen_tracker/WindowTracker.h"
 
 #include <ApplicationServices/ApplicationServices.h>
 #include <CoreFoundation/CoreFoundation.h>

@@ -24,7 +24,7 @@
             "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/darwin/OSXDeviceManager.cc', 'src/cpp/darwin/OSXHelpers.cc', 'src/cpp/darwin/WindowTracker.cc', "src/cpp/screen_tracker/ScreenTracker.cc"],
         }], # OS==mac
         [ 'OS=="win"', {
-            "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/win/DeviceInterface.cc', 'src/cpp/win/MicrophoneDevice.cc'],
+            "sources": [ "src/cpp/main.cc", "src/cpp/mic_detector/MicDetector.cc", 'src/cpp/win/DeviceInterface.cc', 'src/cpp/win/MicrophoneDevice.cc', 'src/cpp/win/WindowTracker.cc', "src/cpp/screen_tracker/ScreenTracker.cc"],
             'defines': [
               'NAPI_CPP_EXCEPTIONS',
               '_HAS_EXCEPTIONS=1'
