@@ -14,12 +14,12 @@ MicMonitor.configureScreenTracker(() => {
 
 MicMonitor.start(callback);
 console.log("STARTED");
-MicMonitor.startTrackScreen(8761);
+MicMonitor.startTrackScreen(395244);
 
 setTimeout(() => {
     MicMonitor.stop();
     console.log("STOPPED");
-MicMonitor.stopTrackScreen();
+// MicMonitor.stopTrackScreen();
 }, 5_000);
 
 setTimeout(() => {

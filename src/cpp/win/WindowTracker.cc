@@ -1,19 +1,21 @@
 #include "../screen_tracker/WindowTracker.h"
 
-#include <windef.h>
+#include <windows.h>
 
 void WindowTracker::UpdateWindows() {
   while (runWorker_.load()) {
     auto target = GetTargetWindow();
     if (target != UINT32_MAX) {
       RECT rect = {NULL};
-      if (GetWindowRect(target, &rect)) {
-        WindowRect w;
+      if (GetWindowRect((HWND)target, &rect)) {
+        WindowData data;
+        data.id = target;
+        WindowRect& w = data.position;
         w.x = rect.left;
         w.y = rect.top;
         w.width = rect.right - rect.left;
         w.height = rect.bottom - rect.top;
-        OnTargetWindow(&w);
+        OnTargetWindow(&data);
       }
     } else {
       OnTargetWindow(nullptr);
