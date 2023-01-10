@@ -4,8 +4,8 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "../darwin/WindowTracker.h"
 #include "../napi-thread-safe-callback.h"
+#include "WindowTracker.h"
 
 class ScreenTracker {
   typedef std::shared_ptr<ThreadSafeCallback> ScreenChangeCallback;
