@@ -85,9 +85,7 @@ std::vector<WindowData> GetAllWindows() {
 }
 
 void WindowTracker::UpdateWindows() {
-  int counter = 0;
-  while (runWorker_.load() && counter < 10) {
-    counter++;
+  while (runWorker_.load()) {
     const auto data = GetAllWindows();
     bool hasStatusIndicator = false;
     for (const WindowData &w : data) {
@@ -116,8 +114,6 @@ void WindowTracker::UpdateWindows() {
       if (!found) {
         OnTargetWindow(nullptr);
       }
-    } else {
-      spdlog::info("No target window");
     }
 
     // Rate limit to run every 2 second.

@@ -11,5 +11,5 @@ interface Position {
 }
 
 declare function configureScreenTracker(onHide: () => undefined, onShow: (position: Position) => undefined): undefined;
-declare function startTrackScreen(): undefined;
+declare function startTrackScreen(winId: number): undefined;
 declare function stopTrackScreen(): undefined;
