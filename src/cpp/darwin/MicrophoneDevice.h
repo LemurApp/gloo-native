@@ -6,8 +6,8 @@
 #include <unordered_set>
 
 #include "../mic_detector/IDevice.h"
+#include "../screen_tracker/WindowTracker.h"
 #include "OSXHelpers.h"
-#include "WindowTracker.h"
 
 namespace Gloo::Internal::MicDetector {
 namespace Darwin {
