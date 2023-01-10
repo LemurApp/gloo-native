@@ -52,12 +52,14 @@ class OSXDeviceManager final : public DeviceManager {
       for (auto it = begin(_mics); it != end(_mics);) {
         const auto key = it->first;
         // Special key for airpods
-        if (key == kWindowManagerDeviceId) {
-          continue;
-        }
         if (input_device_ids.count(key) == 0) {
           // Item is no longer present, remove it.
-          it = _mics.erase(it);
+          if (key == kWindowManagerDeviceId) {
+            // Special case for kWindowManagerDeviceId.
+            ++it;
+          } else {
+            it = _mics.erase(it);
+          }
         } else {
           // Already tracking this item, don't recreate it.
           input_device_ids.erase(key);

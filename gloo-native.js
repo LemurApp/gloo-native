@@ -1,5 +1,6 @@
 var os = require('os');
 const { EventEmitter } = require('events');
+const bindings = require('bindings');
 
 var binding = null;
 
@@ -26,5 +27,29 @@ const stop = () => {
   binding.stopMicrophoneDetection();
 }
 
+const configureScreenTracker = (onHide, onShow) => {
+  if (!loadBinding()) return;
+
+  const emitter = new EventEmitter();
+  emitter.on('hide', onHide);
+  emitter.on('move', onShow);
+  binding.enableWindowTracking(emitter.emit.bind(emitter));
+}
+
+const startTrackScreen = (winId) => {
+  if (!loadBinding()) return;
+  
+  binding.startScreensharing(winId);
+}
+
+const stopTrackScreen = () => {
+  if (!loadBinding()) return;
+  
+  binding.stopScreensharing();
+}
+
 exports.start = start;
 exports.stop = stop;
+exports.configureScreenTracker = configureScreenTracker;
+exports.startTrackScreen = startTrackScreen;
+exports.stopTrackScreen = stopTrackScreen;

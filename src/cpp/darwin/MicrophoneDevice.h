@@ -15,14 +15,7 @@ namespace Darwin {
 class AirpodsMicrophoneDevice final : public IMicrophoneDevice {
  public:
   AirpodsMicrophoneDevice(AudioObjectID inObjectID, IDeviceManager* manager)
-      : IMicrophoneDevice(inObjectID, manager) {
-    WindowTracker::instance().setOnStatus([this](bool status) {
-      const bool prev = state_.exchange(status);
-      if (prev != status) {
-        this->refreshState();
-      }
-    });
-  }
+      : IMicrophoneDevice(inObjectID, manager) {}
 
   ~AirpodsMicrophoneDevice() {}
 
@@ -31,9 +24,16 @@ class AirpodsMicrophoneDevice final : public IMicrophoneDevice {
 
   void startTrackingDeviceImpl() {
     // No-ops since WindowTracker is always running.
+    WindowTracker::instance().setOnStatus([this](bool status) {
+      const bool prev = state_.exchange(status);
+      if (prev != status) {
+        this->refreshState();
+      }
+    });
   }
   void stopTrackingDeviceImpl() {
     // No-ops since WindowTracker is always running.
+    WindowTracker::instance().setOnStatus(nullptr);
   }
 
   std::atomic<bool> state_;

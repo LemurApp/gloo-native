@@ -5,12 +5,21 @@ const callback = (status) => {
     console.log('Mic Status: ', status)
 }
 
+MicMonitor.configureScreenTracker(() => {
+    console.log("Hiding window:");
+}, (pos) => {
+    console.log("Move window: ", pos);
+});
+
+
 MicMonitor.start(callback);
 console.log("STARTED");
+MicMonitor.startTrackScreen(8761);
 
 setTimeout(() => {
     MicMonitor.stop();
     console.log("STOPPED");
+MicMonitor.stopTrackScreen();
 }, 5_000);
 
 setTimeout(() => {

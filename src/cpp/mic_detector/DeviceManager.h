@@ -29,17 +29,22 @@ class DeviceManager : public IDeviceManager {
     spdlog::debug("Starting tracking for all devices");
     IDeviceManager::startTrackingImpl();
 
+    spdlog::debug("Starting tracking for all devices: 1");
+
     // First get all devices.
     refreshDeviceList(/*maybeInitializeDevice=*/false);
+    spdlog::debug("Starting tracking for all devices: 2");
 
     // Add listeners to device level changes.
     startDeviceCallbacks();
+    spdlog::debug("Starting tracking for all devices: 3");
 
     // Start tracking every device.
     auto devices = deviceList();
     for (auto& dev : devices) {
       dev->startTracking();
     }
+    spdlog::debug("Starting tracking for all devices: 4");
   }
 
   void stopTrackingImpl() final {

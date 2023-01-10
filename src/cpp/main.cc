@@ -3,6 +3,7 @@
 
 #include "mic_detector/MicDetector.h"
 #include "napi-thread-safe-callback.h"
+#include "screen_tracker/ScreenTracker.h"
 
 using Gloo::Internal::MicDetector::MicrophoneDetector;
 using Gloo::Internal::MicDetector::MicrophoneState;
@@ -28,6 +29,28 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
               Napi::Function::New(env, [&](const Napi::CallbackInfo &info) {
                 Napi::Env env = info.Env();
                 MicrophoneDetector::instance().pause();
+                return env.Undefined();
+              }));
+
+  exports.Set(Napi::String::New(env, "enableWindowTracking"),
+              Napi::Function::New(env, [&](const Napi::CallbackInfo &info) {
+                Napi::Env env = info.Env();
+                auto onChange = std::make_shared<ThreadSafeCallback>(
+                    info[0].As<Napi::Function>());
+                ScreenTracker::instance().registerCallback(onChange);
+                return env.Undefined();
+              }));
+  exports.Set(Napi::String::New(env, "startScreensharing"),
+              Napi::Function::New(env, [&](const Napi::CallbackInfo &info) {
+                Napi::Env env = info.Env();
+                auto windowHandle = info[0].As<Napi::Number>().Uint32Value();
+                WindowTracker::instance().trackWindow(windowHandle);
+                return env.Undefined();
+              }));
+  exports.Set(Napi::String::New(env, "stopScreensharing"),
+              Napi::Function::New(env, [&](const Napi::CallbackInfo &info) {
+                Napi::Env env = info.Env();
+                WindowTracker::instance().stopTrackingWindow();
                 return env.Undefined();
               }));
   return exports;

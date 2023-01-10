@@ -2,6 +2,7 @@
 
 #include <ApplicationServices/ApplicationServices.h>
 #include <CoreFoundation/CoreFoundation.h>
+#include <spdlog/spdlog.h>
 
 #include <chrono>
 #include <iostream>
@@ -53,9 +54,15 @@ void GetWindowData(CFDictionaryRef window, WindowData &parsed) {
   parsed.parentName = ParseDictionaryString(window, kCGWindowOwnerName);
   parsed.id = ParseDictionaryU32(window, kCGWindowNumber);
   parsed.parentPid = ParseDictionaryU32(window, kCGWindowOwnerPID);
-  CGRectMakeWithDictionaryRepresentation(
-      (CFDictionaryRef)CFDictionaryGetValue(window, kCGWindowBounds),
-      &parsed.position);
+  CGRect rect;
+  if (CGRectMakeWithDictionaryRepresentation(
+          (CFDictionaryRef)CFDictionaryGetValue(window, kCGWindowBounds),
+          &rect)) {
+    parsed.position.x = rect.origin.x;
+    parsed.position.y = rect.origin.y;
+    parsed.position.width = rect.size.width;
+    parsed.position.height = rect.size.height;
+  }
 }
 
 std::vector<WindowData> GetAllWindows() {
@@ -78,7 +85,9 @@ std::vector<WindowData> GetAllWindows() {
 }
 
 void WindowTracker::UpdateWindows() {
-  while (runWorker_.load()) {
+  int counter = 0;
+  while (runWorker_.load() && counter < 10) {
+    counter++;
     const auto data = GetAllWindows();
     bool hasStatusIndicator = false;
     for (const WindowData &w : data) {
@@ -107,9 +116,11 @@ void WindowTracker::UpdateWindows() {
       if (!found) {
         OnTargetWindow(nullptr);
       }
+    } else {
+      spdlog::info("No target window");
     }
 
-    // Rate limit to run every 1/2 second.
+    // Rate limit to run every 2 second.
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
 }

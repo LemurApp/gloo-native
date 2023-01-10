@@ -1,23 +1,30 @@
 #pragma once
 
-#include <CoreFoundation/CoreFoundation.h>
-
 #include <mutex>
 #include <optional>
 #include <thread>
 #include <vector>
+
+struct WindowRect {
+  uint32_t x;
+  uint32_t y;
+  uint32_t width;
+  uint32_t height;
+};
 
 struct WindowData {
   uint32_t id;
   uint32_t parentPid;
   std::optional<std::string> windowName;
   std::optional<std::string> parentName;
-  CGRect position;
+  WindowRect position;
 };
 
 // Responsible for tracking windows.
 class WindowTracker {
-  WindowTracker() : runWorker_(true) { worker_ = std::thread(&WindowTracker::UpdateWindows, this); }
+  WindowTracker() : runWorker_(true) {
+    worker_ = std::thread(&WindowTracker::UpdateWindows, this);
+  }
 
  public:
   // Make this object a singleton.
@@ -37,31 +44,30 @@ class WindowTracker {
     }
   }
   void setOnStatus(std::function<void(bool)> onStatus) {
-    std::unique_lock<std::mutex> lock_;
+    // std::unique_lock<std::mutex> lock(m_);
     statusIndicatorCbs_ = onStatus;
   }
-  void setOnWindowPosition(std::function<void()> onWindowReset,
-                           std::function<void(const CGRect &)> onWindowMove) {
-    std::unique_lock<std::mutex> lock_;
+  void setOnWindowPosition(
+      std::function<void()> onWindowReset,
+      std::function<void(const WindowRect &)> onWindowMove) {
+    // std::unique_lock<std::mutex> lock(m_);
     windowPositionCb_ = std::make_pair(onWindowReset, onWindowMove);
   }
 
   void stopTrackingWindow() {
-    std::unique_lock<std::mutex> lock_;
+    // std::unique_lock<std::mutex> lock(m_);
     targetWindowId_.reset();
   }
   void trackWindow(uint32_t windowId) {
-    std::unique_lock<std::mutex> lock_;
+    // std::unique_lock<std::mutex> lock(m_);
     targetWindowId_ = windowId;
   }
 
  private:
   void OnStatusIndicator(bool statusIndicatorActive) {
-    std::unique_lock<std::mutex> lock_;
     if (statusIndicatorCbs_) statusIndicatorCbs_(statusIndicatorActive);
   }
   void OnTargetWindow(const WindowData *w) {
-    std::unique_lock<std::mutex> lock_;
     if (w) {
       // On position callback.
       if (windowPositionCb_.second) windowPositionCb_.second(w->position);
@@ -72,7 +78,7 @@ class WindowTracker {
   }
 
   uint32_t GetTargetWindow() {
-    std::unique_lock<std::mutex> lock_;
+    // std::unique_lock<std::mutex> lock(m_);
     return targetWindowId_.value_or(UINT32_MAX);
   }
 
@@ -80,8 +86,9 @@ class WindowTracker {
 
   std::atomic<bool> runWorker_;
   std::thread worker_;
-  std::mutex lock_;
+  // std::mutex m_;
   std::optional<uint32_t> targetWindowId_;
-  std::pair<std::function<void()>, std::function<void(const CGRect &)>> windowPositionCb_;
+  std::pair<std::function<void()>, std::function<void(const WindowRect &)>>
+      windowPositionCb_;
   std::function<void(bool)> statusIndicatorCbs_;
 };
