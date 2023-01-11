@@ -14,7 +14,7 @@ MicMonitor.configureScreenTracker(() => {
 
 MicMonitor.start(callback);
 console.log("STARTED");
-MicMonitor.startTrackScreen(395244);
+MicMonitor.startTrackScreen(56823);
 
 setTimeout(() => {
     MicMonitor.stop();

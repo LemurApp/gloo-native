@@ -40,6 +40,7 @@ class ScreenTracker {
     WindowTracker::instance().setOnWindowPosition(
         [this]() {
           const bool prev = visible_.exchange(false);
+          rect_.store({0, 0, 0, 0});
           if (prev) {
             onChange(false, nullptr);
           }
