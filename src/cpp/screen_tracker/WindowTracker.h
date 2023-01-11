@@ -55,8 +55,11 @@ class WindowTracker {
   }
 
   void stopTrackingWindow() {
-    std::unique_lock<std::mutex> lock(m_);
-    targetWindowId_.reset();
+    {
+      std::unique_lock<std::mutex> lock(m_);
+      targetWindowId_.reset();
+    }
+    OnTargetWindow(nullptr);
   }
   void trackWindow(uint32_t windowId) {
     std::unique_lock<std::mutex> lock(m_);
