@@ -42,8 +42,12 @@ std::optional<std::string> ParseDictionaryString(CFDictionaryRef data,
   if (CFDictionaryContainsKey(data, key)) {
     CFTypeRef val = CFDictionaryGetValue(data, key);
     if (CFGetTypeID(val) == CFStringGetTypeID()) {
-      return Gloo::Internal::MicDetector::Darwin::OSX_FromCfString(
-          (CFStringRef)val);
+      try {
+        return Gloo::Internal::MicDetector::Darwin::OSX_FromCfString(
+            (CFStringRef)val);
+      } catch (std::invalid_argument &invalid_argument) {
+        return std::nullopt;
+      }
     }
   }
   return std::nullopt;
