@@ -45,8 +45,13 @@ class ScreenTracker {
           }
         },
         [this](const WindowRect &rect) {
-          visible_.store(true);
-          onChange(true, &rect);
+          const bool prevVis = visible_.exchange(true);
+          const auto prev = rect_.exchange(rect);
+          if (prevVis && memcmp(&prev, &rect, sizeof(rect)) == 0) {
+            // No callback as nothing changed.
+          } else {
+            onChange(true, &rect);
+          }
         });
   }
 
@@ -54,5 +59,6 @@ class ScreenTracker {
 
   std::mutex m_;
   std::atomic<bool> visible_;
+  std::atomic<WindowRect> rect_;
   std::unordered_map<int, ScreenChangeCallback> callbacks_;
 };
