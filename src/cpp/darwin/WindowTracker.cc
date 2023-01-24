@@ -68,15 +68,14 @@ void GetWindowData(CFDictionaryRef window, WindowData &parsed) {
     parsed.position.height = rect.size.height;
   }
 }
-
-std::vector<WindowData> GetAllWindows() {
+void GetAllWindows(std::vector<WindowData> & windows) {
   // Fetch all windows which are on screen.
   CFArrayRef windowList = CGWindowListCopyWindowInfo(
       kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
 
   // Find the window with the matching windowId
   const CFIndex numWindows = CFArrayGetCount(windowList);
-  std::vector<WindowData> windows(numWindows);
+  windows.resize(numWindows);
   for (CFIndex i = 0; i < numWindows; i++) {
     CFTypeRef window_unsafe_ = CFArrayGetValueAtIndex(windowList, i);
     if (CFGetTypeID(window_unsafe_) != CFDictionaryGetTypeID()) {
@@ -85,12 +84,13 @@ std::vector<WindowData> GetAllWindows() {
     CFDictionaryRef window = (CFDictionaryRef)window_unsafe_;
     GetWindowData(window, windows[i]);
   }
-  return windows;
+  CFRelease(windowList);
 }
 
 void WindowTracker::UpdateWindows() {
   while (runWorker_.load()) {
-    const auto data = GetAllWindows();
+    std::vector<WindowData> data;
+    GetAllWindows(data);
     bool hasStatusIndicator = false;
     for (const WindowData &w : data) {
       if (w.parentName.has_value() &&
