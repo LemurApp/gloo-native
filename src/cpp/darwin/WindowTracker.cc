@@ -85,6 +85,7 @@ std::vector<WindowData> GetAllWindows() {
     CFDictionaryRef window = (CFDictionaryRef)window_unsafe_;
     GetWindowData(window, windows[i]);
   }
+  CFRelease(windowList);
   return windows;
 }
 
